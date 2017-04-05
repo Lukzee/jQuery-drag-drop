@@ -1,0 +1,69 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <script type="text/javascript" src="jquery.min.js"></script>
+  <link href="index.css" rel="stylesheet" type="text/css" media="screen">
+  <script type="text/javascript" src="jquery.dragdrop.js"></script>
+</head>
+<body>
+
+  <table class="tableclass" id="maintable">
+  <thead>
+  <tr>
+    <th>Head 1</th>
+    <th>Head 2</th>
+    <th>Head 3</th>
+    <th>Head 4</th>
+  </tr>
+  </thead>
+  <tbody>
+    <tr class="jqdad-row">
+      <td>1a</td>
+      <td>
+
+            <table>
+              <tr>
+                <td>some other table</td>
+              </tr>
+            </table>
+
+      </td>
+      <td>3a</td>
+      <td>4a</td>
+    </tr>
+    <tr class="jqdad-row">
+      <td>1b</td>
+      <td>2b</td>
+      <td>3b</td>
+      <td>4b</td>
+    </tr>
+    <tr class="jqdad-row">
+      <td>1c</td>
+      <td>2c</td>
+      <td>3c</td>
+      <td>4c</td>
+    </tr>
+    <tr class="jqdad-row">
+      <td></td>
+      <td></td>
+      <td>3d</td>
+      <td></td>
+    </tr>
+  </tbody>
+   </table>
+
+<script type="text/javascript">
+
+    $(document).ready(function() {
+
+        $("#maintable").jqdraganddrop({
+            afterDrop:  function(tabid) {
+                alert("After drop function ID: " + tabid);
+            }
+
+        });
+
+    });
+
+</script>
+
