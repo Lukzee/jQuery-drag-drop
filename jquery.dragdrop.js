@@ -58,35 +58,132 @@
 
     }
 
+    function getTabIndex(th) {
+        return  $(th).closest(".jqdad-wrap-table").attr("jqdadindex");
+    }
+
+    function getGroupAttributeItemInPreviousAndNextRow(th, forcol, groupAttribute) {
+        //  getGroupAttributeItemInPreviousRow
+
+        var wraptable   =   $(th).closest(".jqdad-wrap-table tbody");
+        var currow      =   0;
+        var findedattrprevious  =   '';
+        var findedattrnext      =   '';
+        var findedboolprevious  =   false;
+        var findedboolnext      =   false;
+
+        wraptable.find("tr.jqdad-row").each(function() {
+
+            currow++;
+            var curcol  =   0;
+
+            $(this).children().each(function() {
+
+                curcol++;
+
+                if(findedboolprevious && findedboolnext==false && curcol==forcol) {
+                    findedattrnext      =   $(this).attr(groupAttribute);
+                    findedboolnext      =   true;
+                }
+
+                if(this==th) {
+                    findedboolprevious  =   true;
+                }
+
+                if(findedboolprevious==false && curcol==forcol) {
+                    findedattrprevious  =   $(this).attr(groupAttribute);
+                }
+
+            });
+
+        });
+
+        if(findedattrprevious===undefined) {
+            findedattrprevious  =   '';
+        }
+
+        if(findedattrnext===undefined) {
+            findedattrnext  =   '';
+        }
+
+        return  {
+            prev:   findedattrprevious ,
+            next:   findedattrnext
+        };
+    }
+
     function beginMouseEnter(th) {
 
         removeCurrentDropHere(th);
 
         var wraptable   =   $(th).closest(".jqdad-wrap-table tbody");
+        var tabindex    =   getTabIndex(th);
 
         var currow  =   0;
         var curcol  =   0;
         var frow    =   0;
         var fcol    =   0;
-
         var colitems    =   [];
+        var workingroup =   false;
 
+        if(items[tabindex].options.dropInGroup) {
+            workingroup =   true;
+            var groupel =   wraptable.find(".jqdad-element-for-move").attr( items[tabindex].options.groupAttribute );
+            if(groupel===undefined) {
+                groupel =    '';
+            }
+        }
 
         wraptable.find("tr.jqdad-row").each(function() {
             currow++;
             curcol  =   0;
             $(this).children().each(function() {
-                    curcol++;
-                    if(fcol>0 && fcol==curcol) {
-                        colitems.push($(this).clone(true));
-                    }
-                    if(!$(this).hasClass("jqdad-empty-ceil")) {
-                        if(this==th) {
+                curcol++;
+                if(fcol>0 && fcol==curcol) {
+                    colitems.push($(this).clone(true));
+                }
+                if(!$(this).hasClass("jqdad-empty-ceil")) {
+                    if(this==th) {
+                        findedgroup =   false;
+                        if(workingroup) { // if work in group add can drop after last item
+                            var currattr    =   $(this).attr(items[tabindex].options.groupAttribute);
+                            if(groupel==currattr) {
+                                findedgroup =   true;
+                            } else {
+                                p    =   getGroupAttributeItemInPreviousAndNextRow(this, curcol, items[tabindex].options.groupAttribute);
+                                if(groupel==p.prev) {
+                                    findedgroup =   true;
+                                } else {
+                                    groupel     =   parseInt(groupel);  //  chwycony
+                                    currattr    =   parseInt(currattr); //  najechany
+                                    if(p.next!='') {
+                                        var next    =   parseInt(p.next);
+                                        var prev    =   parseInt(p.prev);
+                                        if(groupel>prev && groupel<next && groupel<currattr) {
+                                            findedgroup =   true;
+                                        }
+                                    } else {
+                                         // console.log("PREV:" + prev + " CHWYCONY:" + groupel + " NAJECHANY:" + currattr + " NEXT"+ next);
+                                         if( currattr>groupel && p.prev=='' ) {
+                                             findedgroup =   true;
+                                         } else {
+                                             prev   =   parseInt(p.prev);
+                                             if(currattr>groupel && groupel>=prev) {
+                                                 findedgroup =   true;
+                                             }
+                                         }
+                                    }
+                                }
+                            }
+                        }
+                        if(!workingroup || findedgroup) {
                             frow    =   currow;
                             fcol    =   curcol;
                             colitems.push($(this).clone(true));
                         }
                     }
+                }
+
             });
         });
 
@@ -244,15 +341,29 @@
         }
 
         var wraptable   =   $(".jqdad-wrap-ismoved");
+        var tabindex    =   wraptable.attr("jqdadindex");
+        var groupel     =   '';
+
         var offset      =   wraptable.offset();
         var bottom      =   offset.top + wraptable.outerHeight();
+        var workingroup =   false;
 
         var headerth    =   wraptable.find("thead th");
-        ilosckolumn =   headerth.length;
+        ilosckolumn     =   headerth.length;
 
-        var tableendceil    =   [];
+        var tableendceil        =   [];
+        var tableendattrgroup    =   [];
         for(x=1;x<=ilosckolumn;x++)  {
             tableendceil[x] =   0;
+            tableendattrgroup[x]    =   '';
+        }
+
+        if(items[tabindex].options.dropInGroup) {
+            workingroup =   true;
+            var groupel =   wraptable.find(".jqdad-element-for-move").attr( items[tabindex].options.groupAttribute );
+            if(groupel===undefined) {
+                groupel =    '';
+            }
         }
 
         var currow          =   0;
@@ -265,10 +376,20 @@
                 if(!$(this).hasClass("jqdad-empty-ceil")) {
                     bottom      =   $(this).offset().top + $(this).outerHeight();
                     tableendceil[curceil]   =   Math.max(tableendceil[curceil], bottom);
+                    if(workingroup) {
+                        //  jeśli ta sama gruba lub grupa jest mniejsza i element jest ostatni w rows
+                        var curattr     =   parseInt($(this).attr( items[tabindex].options.groupAttribute ));
+                        var groupelin   =   parseInt(groupel);
+                        tableendattrgroup[curceil]  =   (groupelin>=curattr);
+                    }
+                } else {
+                    if(!tableendattrgroup[curceil] && currow==1) {
+                        tableendattrgroup[curceil]  =   true;
+                    }
                 }
             });
-
         });
+
 
         var curcol      =   0;
         var find        =   0;
@@ -285,21 +406,44 @@
             }
         });
 
+
+
         if(find > 0 && event.pageY>tableendceil[find]) {
 
                 // drop here on last item
+
+                var lastincolisdrop  =       false;
+                wraptable.find("tr.jqdad-row").each(function() {
+                    var currentcol    =   0;
+                    $(this).children().each(function() {
+                        currentcol++;
+                        if(currentcol==find) {
+                            if($(this).hasClass("jgdad-drop-here")) {
+                                lastincolisdrop =   true;
+                            }
+                        }
+                    });
+                });
+
+                if(lastincolisdrop) {
+                    return;
+                }
 
                 $(".jqdad-wrap-table tbody tr.jqdad-row:first-child td:first-child").each(function() {
                     removeCurrentDropHere(this);
                 });
 
+                if(workingroup) {
+                    if(!tableendattrgroup[find]) {
+                        return;
+                    }
+                }
                 var addrow  =   true;
                 wraptable.find("tr.jqdad-row").each(function() {
                     var currentcol    =   0;
                     $(this).children().each(function() {
                         currentcol++;
                         if(currentcol==find) {
-
                             if(!$(this).hasClass("jgdad-drop-here")) {
                                 if($(this).hasClass("jqdad-empty-ceil") && addrow==true) {
                                     addrow  =   false;
@@ -357,7 +501,9 @@
 
             var optionsset  =   {
                 afterDrop:  function(tabid, el) { } ,
-                afterDrag:  function(tabid, el) { }
+                afterDrag:  function(tabid, el) { } ,
+                dropInGroup:    false ,
+                groupAttribute: ""
             };
 
             if(typeof options === 'object') {
