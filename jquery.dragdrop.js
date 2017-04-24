@@ -3,6 +3,219 @@
     var items           =   [];
     var initmousedownrv =   0;
 
+    var methods =   {
+        'deactive'  :   function() {
+            $(this).addClass("jqdad-isnotactive");
+        } ,
+        'active'  :   function() {
+            $(this).removeClass("jqdad-isnotactive");
+        },
+        'addceil': function(html, setrow, setcol, callback) {
+            var row =   0;
+            var col =   0;
+            var itemscol   =   [];
+
+            $(this).find("tr.jqdad-row").each(function() {
+                col =   0;
+                row++;
+                $(this).children().each(function() {
+                    col++;
+                    if(row>=setrow && setcol==col) {
+                        if(!$(this).hasClass("jqdad-empty-ceil")) {
+                            itemscol.push( $(this).clone(true) );
+                        }
+                        if(setrow==row) {
+                            $(html).insertBefore(this);
+                            $(this).prev().each(function() {
+                                initBindCeil.apply(this);
+                            });
+                        } else {
+                            var sethtml =   itemscol.shift();
+                            if(sethtml==undefined) {
+                                sethtml =   '<td class="jqdad-empty-ceil"></td>';
+                            }
+                            $(sethtml).insertBefore(this);
+                        }
+                        $(this).remove();
+                    }
+                });
+            });
+
+            if(itemscol.length>0 ) {
+                // trzeba dodac empty row
+                var ilosckolumn =   $(this).find("thead th").length;
+                var str     =   '';
+                for(x=0;x<ilosckolumn;x++) {
+                    str =   str + '<td class="jqdad-empty-ceil"></td>';
+                }
+                $(this).append("<tr class='jqdad-row'>" + str + "</tr>");
+                var curcol =   0;
+                $(this).find("tr.jqdad-row:last-child").children().each(function() {
+                    curcol++;
+                    if(curcol==setcol) {
+                        objhtml    =   itemscol.shift();
+                        $(objhtml).insertBefore(this);
+                        $(this).remove();
+                    }
+                });
+            }
+            if(callback!=undefined && typeof(callback) === "function") {
+                callback();
+            }
+        },
+        'moveceil': function(fromrow, fromcol, targetrow, targetcol) {
+
+            var row =   0;
+            var col =   0;
+            var itemscol    =   [];
+            var moveditem   =   '';
+            var objhtml     =    '';
+
+
+            $(this).find("tr.jqdad-row").each(function() {
+                col =   0;
+                row++;
+                $(this).children().each(function() {
+                    col++;
+                    if(row>=fromrow && fromcol==col) {
+                        if(!$(this).hasClass("jqdad-empty-ceil")) {
+                            if(fromrow==row) {
+                                moveditem   =   this;
+                            } else {
+                                itemscol.push( $(this).clone(true) );
+                            }
+                        }
+                    }
+                });
+            });
+
+            if(typeof moveditem==='object') { // jeśli coś znaleziono i nie jest to pusta komówka
+
+                var itemscol2    =   [];
+                itemscol2.push(moveditem);
+                row =   0;
+                $(this).find("tr.jqdad-row").each(function() {
+                    col =   0;
+                    row++;
+                    $(this).children().each(function() {
+                        col++;
+                        if(row>=fromrow && fromcol==col) {
+                            objhtml    =   itemscol.shift();
+                            if(objhtml==undefined) {
+                                objhtml =   '<td class="jqdad-empty-ceil"></td>';
+                            }
+                            $(objhtml).insertBefore(this);
+                            $(this).remove();
+                        }
+                    });
+                });
+
+                row =   0;
+                $(this).find("tr.jqdad-row").each(function() {
+                    col =   0;
+                    row++;
+                    $(this).children().each(function() {
+                        col++;
+                        if(row>=targetrow && targetcol==col) {
+                            if(!$(this).hasClass("jqdad-empty-ceil")) {
+                                itemscol2.push( $(this).clone(true) );
+                            }
+                            objhtml    =   itemscol2.shift();
+                            if(objhtml==undefined) {
+                                objhtml =   '<td class="jqdad-empty-ceil"></td>';
+                            }
+                            $(objhtml).insertBefore(this);
+                            $(this).remove();
+                        }
+                    });
+                });
+
+                if(itemscol2.length>0 ) {
+                    // może trzeba dodać row na samym końcu
+                    var ilosckolumn =   $(this).find("thead th").length;
+                    var str     =   '';
+                    for(x=0;x<ilosckolumn;x++) {
+                        str =   str + '<td class="jqdad-empty-ceil"></td>';
+                    }
+                    $(this).append("<tr class='jqdad-row'>" + str + "</tr>");
+                    var curcol =   0;
+                    $(this).find("tr.jqdad-row:last-child").children().each(function() {
+                        curcol++;
+                        if(curcol==targetcol) {
+                            objhtml    =   itemscol2.shift();
+                            $(objhtml).insertBefore(this);
+                            $(this).remove();
+                        }
+                    });
+                }
+
+            }
+
+
+        } ,
+        'removeceil' : function(ceil) {
+
+            objcompare  =   {};
+            ceil.each(function() {
+                objcompare  =   this;
+            });
+
+            wraptable   =   $(this);
+            var currow = 0 , curcol = 0 , frow = 0 , fcol = 0;
+            var nextitems   =   [];
+            wraptable.find("tr.jqdad-row").each(function() {
+                currow++;
+                curcol  =   0;
+                $(this).children().each(function() {
+                    curcol++;
+                    if(curcol==fcol && frow>0) {
+                        nextitems.push($(this).clone(true));
+                    }
+                    if(this==objcompare) {
+                        frow    =   currow;
+                        fcol    =   curcol;
+                    }
+                });
+            });
+
+            if(frow>0) {
+                currow  =   0;
+                wraptable.find("tr.jqdad-row").each(function() {
+                    currow++;
+                    curcol  =   0;
+
+                    $(this).children().each(function() {
+                        curcol++;
+
+                        if(curcol==fcol) {
+                            if(currow>=frow) {
+                                var sethtml =   nextitems.shift();
+                                if(sethtml==undefined) {
+                                    sethtml =   '<td class="jqdad-empty-ceil"></td>';
+                                }
+
+                                $(sethtml).insertBefore(this);
+                                $(this).remove();
+                            }
+                        }
+                    });
+                });
+            }
+
+            var itemfind    =   true;
+            wraptable.find("tr.jqdad-row:last-child").children().each(function() {
+                if(!$(this).hasClass("jqdad-empty-ceil")) {
+                    itemfind    =   false;
+                }
+            });
+
+            if(itemfind) {
+                wraptable.find("tr.jqdad-row:last-child").remove();
+            }
+
+        }
+    };
+
     function removeCurrentDropHere(th) {
 
         var wraptable   =   $(th).closest(".jqdad-wrap-table tbody");
@@ -73,29 +286,21 @@
         var findedboolnext      =   false;
 
         wraptable.find("tr.jqdad-row").each(function() {
-
             currow++;
             var curcol  =   0;
-
             $(this).children().each(function() {
-
                 curcol++;
-
                 if(findedboolprevious && findedboolnext==false && curcol==forcol) {
                     findedattrnext      =   $(this).attr(groupAttribute);
                     findedboolnext      =   true;
                 }
-
                 if(this==th) {
                     findedboolprevious  =   true;
                 }
-
                 if(findedboolprevious==false && curcol==forcol) {
                     findedattrprevious  =   $(this).attr(groupAttribute);
                 }
-
             });
-
         });
 
         if(findedattrprevious===undefined) {
@@ -111,6 +316,7 @@
             next:   findedattrnext
         };
     }
+
 
     function beginMouseEnter(th) {
 
@@ -143,44 +349,53 @@
                     colitems.push($(this).clone(true));
                 }
                 if(!$(this).hasClass("jqdad-empty-ceil")) {
-                    if(this==th) {
-                        findedgroup =   false;
-                        if(workingroup) { // if work in group add can drop after last item
-                            var currattr    =   $(this).attr(items[tabindex].options.groupAttribute);
-                            if(groupel==currattr) {
-                                findedgroup =   true;
+                    if(this==th && !$(this).hasClass("jqdad-nodrop-before")) {
+
+                        findedgroup = false;
+                        if (workingroup) { // if work in group add can drop after last item
+
+                            var currattr = $(this).attr(items[tabindex].options.groupAttribute);
+                            if (groupel == currattr) {
+                                findedgroup = true;
                             } else {
-                                p    =   getGroupAttributeItemInPreviousAndNextRow(this, curcol, items[tabindex].options.groupAttribute);
-                                if(groupel==p.prev) {
-                                    findedgroup =   true;
+                                p = getGroupAttributeItemInPreviousAndNextRow(this, curcol, items[tabindex].options.groupAttribute);
+                                if (groupel == p.prev) {
+                                    findedgroup = true;
                                 } else {
-                                    groupel     =   parseInt(groupel);  //  chwycony
-                                    currattr    =   parseInt(currattr); //  najechany
-                                    if(p.next!='') {
-                                        var next    =   parseInt(p.next);
-                                        var prev    =   parseInt(p.prev);
-                                        if(groupel>prev && groupel<next && groupel<currattr) {
-                                            findedgroup =   true;
+                                    groupel     = parseInt(groupel);  //  chwycony
+                                    currattr    = parseInt(currattr); //  najechany
+                                    if (p.next != '') {
+                                        if (p.prev == '') {
+                                            if (currattr >= groupel) {
+                                                findedgroup = true;
+                                            }
+                                        } else {
+                                            var next = parseInt(p.next);
+                                            var prev = parseInt(p.prev);
+                                            if (groupel > prev && groupel < next && groupel < currattr) {
+                                                findedgroup = true;
+                                            }
                                         }
                                     } else {
-                                         // console.log("PREV:" + prev + " CHWYCONY:" + groupel + " NAJECHANY:" + currattr + " NEXT"+ next);
-                                         if( currattr>groupel && p.prev=='' ) {
-                                             findedgroup =   true;
-                                         } else {
-                                             prev   =   parseInt(p.prev);
-                                             if(currattr>groupel && groupel>=prev) {
-                                                 findedgroup =   true;
-                                             }
-                                         }
+                                        if (currattr > groupel && p.prev == '') {
+                                            findedgroup = true;
+                                        } else {
+                                            prev = parseInt(p.prev);
+                                            if (currattr > groupel && groupel >= prev) {
+                                                findedgroup = true;
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                        if(!workingroup || findedgroup) {
-                            frow    =   currow;
-                            fcol    =   curcol;
+
+                        if (!workingroup || findedgroup) {
+                            frow = currow;
+                            fcol = curcol;
                             colitems.push($(this).clone(true));
                         }
+
                     }
                 }
 
@@ -254,6 +469,7 @@
         $(th).addClass("jqdad-element-for-move");
 
         var item    =   $(".jgdad-moved-item");
+        item.width($(th).width());
         var w       =    Math.floor( item.width() / 2);
         item.css("left", ev.pageX - w);
         item.css("top", ev.pageY + 20);
@@ -491,7 +707,53 @@
         }
     }
 
+    function initBindCeil() {
+
+        if($(this).html().trim()=='') {
+            $(this).addClass("jqdad-empty-ceil");
+        }
+
+        $(this).mouseenter(function(event) {
+            if(!$(this).closest(".jqdad-wrap-table").hasClass("jqdad-wrap-ismoved")) {
+                return;
+            }
+            if($("body").hasClass("jgdad-noselect")) {
+                // jeśli uruchomiona animacja
+                beginMouseEnter(this, event);
+            }
+        });
+
+        $(this).mousedown(function(event) {
+
+            if($(this).hasClass("jqdad-no-drag")) {
+                return;
+            }
+
+            if($(this).closest(".jqdad-wrap-table").hasClass("jqdad-isnotactive")) {
+                return;
+            }
+
+            if($(this).hasClass("jqdad-empty-ceil")) { return; }
+            initmousedownrv =   Math.random();
+            $("body").addClass("jgdad-noselect");
+            setTimeout(function(th, ev, rv) {
+                if(initmousedownrv==rv) {
+                    $("body").addClass("jgdad-body-cursor-active");
+                    $(".jqdad-wrap-ismoved").removeClass("jqdad-wrap-ismoved");
+                    $(th).closest(".jqdad-wrap-table").addClass("jqdad-wrap-ismoved");
+                    initMouseDown(th, ev);
+                }
+            }, 250, this, event, initmousedownrv);
+        });
+
+    }
+
     $.fn.jqdraganddrop	=	function(options) {
+
+        if (methods[options]) {
+            return methods[options].apply(this, Array.prototype.slice.call(arguments, 1));
+        }
+
 
         return  this.each(function() {
 
@@ -513,6 +775,13 @@
             $(this).attr("jqdadindex", xc);
             $(this).addClass("jqdad-wrap-table", xc);
 
+
+
+            $(this).find("tbody tr.jqdad-row").children().each(function() {
+                initBindCeil.apply(this);
+            });
+
+            /*
             var xrow    =   0;
             var xcol    =   0;
             $(this).find("tbody tr.jqdad-row").each(function() {
@@ -520,14 +789,16 @@
                 xcol    =   0;
                 $(this).children().each(function() {
                     xcol++;
-                    var id  =   xrow + "_" + xcol;
-                    $(this).attr("jqdad-id-ceil", id);
+                    // var id  =   xrow + "_" + xcol;
+                    // $(this).attr("jqdad-id-ceil", id); ??
                     if($(this).html().trim()=='') {
                         $(this).addClass("jqdad-empty-ceil");
                     }
                 });
             });
+            */
 
+            /*
             $(this).find("tbody tr.jqdad-row").children().mouseenter(function(event) {
                 if(!$(this).closest(".jqdad-wrap-table").hasClass("jqdad-wrap-ismoved")) {
                     return;
@@ -537,20 +808,29 @@
                     beginMouseEnter(this, event);
                 }
             });
+            */
 
-
+            /*
             $(this).find("tbody tr.jqdad-row").children().mousedown(function(event) {
+                if($(this).hasClass("jqdad-no-drag")) {
+                    return;
+                }
+                if($(this).closest(".jqdad-wrap-table").hasClass("jqdad-isnotactive")) {
+                    return;
+                }
                 if($(this).hasClass("jqdad-empty-ceil")) { return; }
                 initmousedownrv =   Math.random();
                 $("body").addClass("jgdad-noselect");
                 setTimeout(function(th, ev, rv) {
                     if(initmousedownrv==rv) {
+                        $("body").addClass("jgdad-body-cursor-active");
                         $(".jqdad-wrap-ismoved").removeClass("jqdad-wrap-ismoved");
                         $(th).closest(".jqdad-wrap-table").addClass("jqdad-wrap-ismoved");
                         initMouseDown(th, ev);
                     }
                 }, 250, this, event, initmousedownrv);
             });
+            */
 
             $(document).mousemove(function( event ) {
                 var item    =   $(".jgdad-moved-item");
@@ -568,6 +848,7 @@
                 var item    =   $("body");
 
                 item.removeClass("jgdad-noselect");
+                item.removeClass("jgdad-body-cursor-active");
                 item.find(".jgdad-moved-item").remove();
                 saveceilInTable();
                 $(".jqdad-wrap-table tbody tr.jqdad-row:first-child td:first-child").each(function() {

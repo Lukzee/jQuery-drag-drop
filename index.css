@@ -1,6 +1,7 @@
 
  .jgdad-moved-item {
-     position:  fixed;
+     position:  absolute;
+     z-index:   99999;
      display:   block;
      background-color:  white;
      opacity:   0.7;
@@ -17,11 +18,17 @@
                 supported by Chrome and Opera */
  }
 
+ .jgdad-body-cursor-active {
+     cursor:move;
+ }
+
 .jgdad-drop-here {
     background-image:   url("drop-here.png");
     background-repeat:  no-repeat;
     background-position:    center center;
 }
+
+
 
 /* OWN STYLE - BEGIN */
 
